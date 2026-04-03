@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geometry Dash Remake</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --neon-cyan: #00f5ff;
+    --neon-pink: #ff006e;
+    --neon-yellow: #ffbe0b;
+    --neon-green: #06d6a0;
+    --bg-dark: #0a0a1a;
+    --bg-mid: #12122a;
+    --text-light: #e0e0ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-dark);
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--text-light);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* SCREENS */
+  .screen { display: none; width: 100vw; height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* MENU */
+  #menu-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 0%, #1a0a3a 0%, #0a0a1a 70%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #menu-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,245,255,0.04) 40px),
+                repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,245,255,0.04) 40px);
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 20px var(--neon-cyan), 0 0 60px rgba(0,245,255,0.4);
+    margin-bottom: 0.3em;
+    position: relative;
+    z-index: 1;
+    animation: pulse-logo 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-logo {
+    0%,100% { text-shadow: 0 0 20px var(--neon-cyan), 0 0 60px rgba(0,245,255,0.4); }
+    50% { text-shadow: 0 0 40px var(--neon-cyan), 0 0 100px rgba(0,245,255,0.6), 0 0 140px rgba(0,245,255,0.2); }
+  }
+
+  .subtitle {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.6rem, 1.5vw, 1rem);
+    letter-spacing: 0.5em;
+    color: var(--neon-pink);
+    text-shadow: 0 0 10px var(--neon-pink);
+    margin-bottom: 3rem;
+    position: relative; z-index: 1;
+  }
+
+  .level-cards {
+    display: flex;
+    gap: 1.5rem;
+    z-index: 1;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .level-card {
+    width: 200px;
+    padding: 1.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .level-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.15;
+    transition: opacity 0.2s;
+  }
+
+  .level-card:hover { transform: translateY(-6px) scale(1.03); }
+  .level-card:hover::before { opacity: 0.3; }
+
+  .level-card.easy {
+    border: 2px solid var(--neon-green);
+    box-shadow: 0 0 20px rgba(6,214,160,0.3);
+  }
+  .level-card.easy::before { background: var(--neon-green); }
+  .level-card.easy:hover { box-shadow: 0 0 40px rgba(6,214,160,0.5); }
+
+  .level-card.medium {
+    border: 2px solid var(--neon-yellow);
+    box-shadow: 0 0 20px rgba(255,190,11,0.3);
+  }
+  .level-card.medium::before { background: var(--neon-yellow); }
+  .level-card.medium:hover { box-shadow: 0 0 40px rgba(255,190,11,0.5); }
+
+  .level-card.hard {
+    border: 2px solid var(--neon-pink);
+    box-shadow: 0 0 20px rgba(255,0,110,0.3);
+  }
+  .level-card.hard::before { background: var(--neon-pink); }
+  .level-card.hard:hover { box-shadow: 0 0 40px rgba(255,0,110,0.5); }
+
+  .card-diff {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    margin-bottom: 0.5rem;
+    opacity: 0.8;
+  }
+  .easy .card-diff { color: var(--neon-green); }
+  .medium .card-diff { color: var(--neon-yellow); }
+  .hard .card-diff { color: var(--neon-pink); }
+
+  .card-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.8rem;
+  }
+
+  .card-stars { font-size: 1rem; margin-bottom: 0.8rem; }
+
+  .card-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    display: inline-block;
+  }
+
+  .status-completed { background: rgba(6,214,160,0.2); color: var(--neon-green); border: 1px solid var(--neon-green); }
+  .status-incomplete { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.1); }
+
+  /* GAME SCREEN */
+  #game-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-dark);
+    position: relative;
+  }
+
+  #game-header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 10;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  #level-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--neon-cyan);
+  }
+
+  #progress-bar-wrap {
+    flex: 1;
+    margin: 0 1.5rem;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+    border-radius: 3px;
+    transition: width 0.1s;
+    box-shadow: 0 0 8px var(--neon-cyan);
+  }
+
+  #progress-pct {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    color: white;
+    min-width: 40px;
+    text-align: right;
+  }
+
+  #back-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 1rem;
+    transition: background 0.2s;
+  }
+  #back-btn:hover { background: rgba(255,255,255,0.15); }
+
+  #game-canvas {
+    border-radius: 4px;
+    display: block;
+  }
+
+  #hint {
+    position: absolute;
+    bottom: 1.5rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.3);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* OVERLAY */
+  #overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    backdrop-filter: blur(6px);
+  }
+
+  #overlay.visible { display: flex; }
+
+  #overlay-icon { font-size: 4rem; margin-bottom: 1rem; }
+
+  #overlay-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  #overlay-sub {
+    font-size: 1rem;
+    opacity: 0.6;
+    margin-bottom: 2.5rem;
+    letter-spacing: 0.1em;
+  }
+
+  .overlay-btns { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+
+  .overlay-btn {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0.8rem 2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid;
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-transform: uppercase;
+  }
+
+  .overlay-btn:hover { transform: scale(1.05); }
+
+  .btn-retry {
+    background: rgba(0,245,255,0.1);
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(0,245,255,0.2);
+  }
+
+  .btn-menu {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.3);
+    color: white;
+  }
+
+  /* particles */
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: float-particle linear forwards;
+  }
+
+  @keyframes float-particle {
+    0% { opacity: 1; transform: translate(0,0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- MENU -->
+<div id="menu-screen" class="screen active">
+  <div class="logo">Geometry Dash</div>
+  <div class="subtitle">REMAKE EDITION</div>
+  <div class="level-cards">
+    <div class="level-card easy" onclick="startLevel(0)">
+      <div class="card-diff">EASY</div>
+      <div class="card-name">Stereo Rush</div>
+      <div class="card-stars">⭐☆☆☆☆</div>
+      <div class="card-status" id="status-0">NOT COMPLETED</div>
+    </div>
+    <div class="level-card medium" onclick="startLevel(1)">
+      <div class="card-diff">MEDIUM</div>
+      <div class="card-name">Neon Surge</div>
+      <div class="card-stars">⭐⭐⭐☆☆</div>
+      <div class="card-status" id="status-1">NOT COMPLETED</div>
+    </div>
+    <div class="level-card hard" onclick="startLevel(2)">
+      <div class="card-diff">HARD</div>
+      <div class="card-name">Chaos Theory</div>
+      <div class="card-stars">⭐⭐⭐⭐⭐</div>
+      <div class="card-status" id="status-2">NOT COMPLETED</div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game-screen" class="screen">
+  <div id="game-header">
+    <div id="level-title">STEREO RUSH</div>
+    <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+    <div id="progress-pct">0%</div>
+    <button id="back-btn" onclick="goMenu()">◀ MENU</button>
+  </div>
+  <canvas id="game-canvas"></canvas>
+  <div id="hint">CLICK / SPACE / TAP TO JUMP</div>
+
+  <div id="overlay">
+    <div id="overlay-icon">💥</div>
+    <div id="overlay-title">LEVEL FAILED</div>
+    <div id="overlay-sub">You crashed!</div>
+    <div class="overlay-btns">
+      <button class="overlay-btn btn-retry" onclick="retryLevel()">↺ RETRY</button>
+      <button class="overlay-btn btn-menu" onclick="goMenu()">⌂ MENU</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── LEVEL DEFINITIONS ─────────────────────────────────────────────────────
+// Each level: array of obstacle objects { type, x, w, h, gapY? }
+// type: 'floor_spike' | 'block' | 'platform_gap'
+// player speed increases slightly per level
+
+const TILE = 40;
+const GROUND_Y_RATIO = 0.72; // ground line as fraction of canvas height
+const PLAYER_SIZE = 32;
+
+const LEVELS = [
+  // ── EASY: Stereo Rush ─────────────────────────────────────────────────
+  {
+    name: "STEREO RUSH",
+    difficulty: "EASY",
+    color1: "#06d6a0",
+    color2: "#00b4d8",
+    bgColor: "#020d18",
+    playerColor: "#06d6a0",
+    speed: 5,
+    // obstacles as {type, xTile} – generated into world coords at runtime
+    // spike = 1 tile wide triangle on ground
+    // block = 1 tile cube on ground (jump over)
+    // tall = 2 tile tall block (must jump)
+    // gap  = floor gap (must jump)
+    map: [
+      // long runway first
+      {type:'block', x:18},
+      {type:'block', x:22},
+      {type:'spike', x:26},
+      {type:'block', x:30},
+      {type:'gap',   x:34, w:2},
+      {type:'block', x:38},
+      {type:'spike', x:41},
+      {type:'spike', x:42},
+      {type:'block', x:46},
+      {type:'gap',   x:50, w:2},
+      {type:'block', x:54},
+      {type:'block', x:55},
+      {type:'spike', x:59},
+      {type:'gap',   x:63, w:2},
+      {type:'block', x:67},
+      {type:'spike', x:71},
+      {type:'block', x:75},
+      {type:'block', x:76},
+      {type:'gap',   x:80, w:2},
+      {type:'spike', x:84},
+      {type:'spike', x:85},
+      {type:'block', x:89},
+      {type:'gap',   x:93, w:2},
+      {type:'spike', x:97},
+    ],
+    length: 110 // tiles
+  },
+
+  // ── MEDIUM: Neon Surge ────────────────────────────────────────────────
+  {
+    name: "NEON SURGE",
+    difficulty: "MEDIUM",
+    color1: "#ffbe0b",
+    color2: "#fb5607",
+    bgColor: "#110800",
+    playerColor: "#ffbe0b",
+    speed: 7,
+    map: [
+      {type:'block', x:14},
+      {type:'spike', x:17},
+      {type:'spike', x:18},
+      {type:'gap',   x:21, w:3},
+      {type:'block', x:26},
+      {type:'block', x:27},
+      {type:'spike', x:30},
+      {type:'gap',   x:33, w:2},
+      {type:'spike', x:37},
+      {type:'tall',  x:40},
+      {type:'spike', x:43},
+      {type:'gap',   x:46, w:3},
+      {type:'block', x:51},
+      {type:'spike', x:54},
+      {type:'spike', x:55},
+      {type:'block', x:58},
+      {type:'gap',   x:61, w:3},
+      {type:'tall',  x:66},
+      {type:'spike', x:69},
+      {type:'block', x:72},
+      {type:'block', x:73},
+      {type:'gap',   x:76, w:3},
+      {type:'spike', x:81},
+      {type:'spike', x:82},
+      {type:'tall',  x:85},
+      {type:'gap',   x:88, w:2},
+      {type:'block', x:92},
+      {type:'spike', x:95},
+      {type:'spike', x:96},
+      {type:'gap',   x:99, w:3},
+      {type:'spike', x:104},
+    ],
+    length: 118
+  },
+
+  // ── HARD: Chaos Theory ────────────────────────────────────────────────
+  {
+    name: "CHAOS THEORY",
+    difficulty: "HARD",
+    color1: "#ff006e",
+    color2: "#8338ec",
+    bgColor: "#0d0018",
+    playerColor: "#ff006e",
+    speed: 9,
+    map: [
+      {type:'spike', x:10},
+      {type:'spike', x:11},
+      {type:'gap',   x:13, w:3},
+      {type:'tall',  x:18},
+      {type:'spike', x:21},
+      {type:'block', x:23},
+      {type:'spike', x:25},
+      {type:'gap',   x:27, w:3},
+      {type:'tall',  x:32},
+      {type:'spike', x:35},
+      {type:'spike', x:36},
+      {type:'gap',   x:38, w:3},
+      {type:'block', x:43},
+      {type:'block', x:44},
+      {type:'spike', x:47},
+      {type:'tall',  x:49},
+      {type:'gap',   x:52, w:3},
+      {type:'spike', x:57},
+      {type:'spike', x:58},
+      {type:'block', x:61},
+      {type:'gap',   x:64, w:3},
+      {type:'tall',  x:69},
+      {type:'spike', x:72},
+      {type:'spike', x:73},
+      {type:'gap',   x:75, w:3},
+      {type:'block', x:80},
+      {type:'tall',  x:82},
+      {type:'spike', x:85},
+      {type:'gap',   x:88, w:4},
+      {type:'spike', x:94},
+      {type:'spike', x:95},
+      {type:'tall',  x:97},
+      {type:'gap',   x:100, w:3},
+      {type:'block', x:105},
+      {type:'spike', x:108},
+      {type:'spike', x:109},
+      {type:'gap',   x:111, w:3},
+      {type:'spike', x:116},
+    ],
+    length: 130
+  }
+];
+
+// ─── GAME STATE ─────────────────────────────────────────────────────────────
+const completedLevels = [false, false, false];
+let currentLevel = 0;
+let animId = null;
+
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const maxW = Math.min(window.innerWidth, 900);
+  const maxH = Math.min(window.innerHeight - 60, 520);
+  canvas.width = maxW;
+  canvas.height = maxH;
+}
+
+// ─── LEVEL STATE ────────────────────────────────────────────────────────────
+let state;
+
+function buildObstacles(level) {
+  const H = canvas.height;
+  const groundY = Math.floor(H * GROUND_Y_RATIO);
+  const obs = [];
+  for (const o of level.map) {
+    if (o.type === 'spike') {
+      obs.push({ type:'spike', x: o.x * TILE, y: groundY, w: TILE, h: TILE });
+    } else if (o.type === 'block') {
+      obs.push({ type:'block', x: o.x * TILE, y: groundY - TILE, w: TILE, h: TILE });
+    } else if (o.type === 'tall') {
+      obs.push({ type:'block', x: o.x * TILE, y: groundY - TILE*2, w: TILE, h: TILE*2 });
+    } else if (o.type === 'gap') {
+      const gapW = (o.w || 2) * TILE;
+      obs.push({ type:'gap', x: o.x * TILE, w: gapW });
+    }
+  }
+  return obs;
+}
+
+function initLevel(idx) {
+  resizeCanvas();
+  const level = LEVELS[idx];
+  const H = canvas.height;
+  const groundY = Math.floor(H * GROUND_Y_RATIO);
+
+  state = {
+    level: level,
+    levelIdx: idx,
+    groundY,
+    worldX: 0,
+    totalWidth: level.length * TILE,
+    obstacles: buildObstacles(level),
+    player: {
+      x: 80,
+      y: groundY - PLAYER_SIZE,
+      vy: 0,
+      onGround: true,
+      angle: 0,
+      alive: true,
+      dead: false,
+    },
+    particles: [],
+    done: false,
+    stars: [],
+    bgStars: generateBgStars(canvas.width, H),
+  };
+}
+
+function generateBgStars(w, h) {
+  const stars = [];
+  for (let i = 0; i < 80; i++) {
+    stars.push({ x: Math.random()*w, y: Math.random()*h*0.7, r: Math.random()*1.5+0.3, alpha: Math.random()*0.6+0.2 });
+  }
+  return stars;
+}
+
+// ─── INPUT ───────────────────────────────────────────────────────────────────
+let jumpPressed = false;
+
+function handleJump() {
+  if (!state || state.done) return;
+  if (state.player.onGround && state.player.alive) {
+    state.player.vy = -13.5;
+    state.player.onGround = false;
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); handleJump(); }
+});
+canvas.addEventListener('pointerdown', handleJump);
+
+// ─── PHYSICS & UPDATE ────────────────────────────────────────────────────────
+const GRAVITY = 0.65;
+
+function update() {
+  if (!state || state.done) return;
+  const p = state.player;
+  const level = state.level;
+
+  // scroll world
+  state.worldX += level.speed;
+
+  // player physics
+  p.vy += GRAVITY;
+  p.y += p.vy;
+
+  // ground check (default floor)
+  const groundY = state.groundY;
+
+  // Check if player is over a gap
+  let overGap = false;
+  for (const o of state.obstacles) {
+    if (o.type === 'gap') {
+      const oScreenX = o.x - state.worldX;
+      const playerRight = p.x + PLAYER_SIZE;
+      const playerLeft = p.x;
+      if (playerRight > oScreenX + 4 && playerLeft < oScreenX + o.w - 4) {
+        overGap = true;
+      }
+    }
+  }
+
+  if (!overGap) {
+    if (p.y + PLAYER_SIZE >= groundY) {
+      p.y = groundY - PLAYER_SIZE;
+      p.vy = 0;
+      p.onGround = true;
+    }
+  } else {
+    // falling into gap = death
+    if (p.y > groundY + 10) {
+      die();
+      return;
+    }
+    p.onGround = false;
+  }
+
+  // off-screen top/bottom
+  if (p.y < -PLAYER_SIZE * 2) { p.y = -PLAYER_SIZE * 2; p.vy = 0; }
+
+  // Rotation
+  if (!p.onGround) { p.angle += 0.12; } else { p.angle = Math.round(p.angle / (Math.PI/2)) * (Math.PI/2); }
+
+  // Collision with obstacles
+  for (const o of state.obstacles) {
+    if (o.type === 'gap') continue;
+    const oScreenX = o.x - state.worldX;
+
+    if (o.type === 'spike') {
+      // Triangle collision (simplified AABB but with shrunk box)
+      const margin = 6;
+      if (p.x + PLAYER_SIZE - margin > oScreenX + margin &&
+          p.x + margin < oScreenX + o.w - margin &&
+          p.y + PLAYER_SIZE - margin > o.y - o.h + margin &&
+          p.y + margin < o.y) {
+        die(); return;
+      }
+    } else if (o.type === 'block') {
+      const margin = 3;
+      if (p.x + PLAYER_SIZE - margin > oScreenX + margin &&
+          p.x + margin < oScreenX + o.w - margin &&
+          p.y + PLAYER_SIZE - margin > o.y + margin &&
+          p.y + margin < o.y + o.h - margin) {
+        die(); return;
+      }
+    }
+  }
+
+  // Progress
+  const pct = Math.min(100, Math.round((state.worldX / state.totalWidth) * 100));
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+
+  // Win condition
+  if (state.worldX >= state.totalWidth) {
+    winLevel();
+  }
+}
+
+function die() {
+  state.done = true;
+  state.player.alive = false;
+  spawnDeathParticles();
+  setTimeout(() => showOverlay(false), 500);
+}
+
+function winLevel() {
+  state.done = true;
+  completedLevels[currentLevel] = true;
+  updateStatusCards();
+  setTimeout(() => showOverlay(true), 400);
+}
+
+function spawnDeathParticles() {
+  const p = state.player;
+  const color = state.level.playerColor;
+  for (let i = 0; i < 18; i++) {
+    state.particles.push({
+      x: p.x + PLAYER_SIZE/2,
+      y: p.y + PLAYER_SIZE/2,
+      vx: (Math.random()-0.5)*10,
+      vy: (Math.random()-0.5)*10 - 4,
+      r: Math.random()*6+2,
+      life: 1,
+      decay: Math.random()*0.04+0.02,
+      color
+    });
+  }
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function render() {
+  if (!state) return;
+  const { level, groundY, worldX, player: p, particles } = state;
+  const W = canvas.width, H = canvas.height;
+
+  // Background
+  ctx.fillStyle = level.bgColor;
+  ctx.fillRect(0, 0, W, H);
+
+  // BG stars
+  for (const s of state.bgStars) {
+    ctx.save();
+    ctx.globalAlpha = s.alpha;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Ground gradient
+  const grad = ctx.createLinearGradient(0, groundY, 0, H);
+  grad.addColorStop(0, level.color1 + '55');
+  grad.addColorStop(1, level.bgColor);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, groundY, W, H - groundY);
+
+  // Ground line
+  ctx.strokeStyle = level.color1;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = level.color1;
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.moveTo(0, groundY);
+  ctx.lineTo(W, groundY);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Grid lines on ground (parallax)
+  ctx.strokeStyle = level.color1 + '22';
+  ctx.lineWidth = 1;
+  const gridSize = 40;
+  const gridOffX = (-worldX * 0.3) % gridSize;
+  for (let gx = gridOffX; gx < W; gx += gridSize) {
+    ctx.beginPath(); ctx.moveTo(gx, groundY); ctx.lineTo(gx, H); ctx.stroke();
+  }
+  for (let gy = groundY; gy < H; gy += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+  }
+
+  // Obstacles
+  for (const o of state.obstacles) {
+    const sx = o.x - worldX;
+    if (sx > W + 60 || sx < -80) continue;
+
+    if (o.type === 'spike') {
+      ctx.save();
+      ctx.fillStyle = level.color1;
+      ctx.shadowColor = level.color1;
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.moveTo(sx, o.y);
+      ctx.lineTo(sx + o.w/2, o.y - o.h);
+      ctx.lineTo(sx + o.w, o.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    } else if (o.type === 'block') {
+      ctx.save();
+      ctx.fillStyle = level.color2 + 'cc';
+      ctx.shadowColor = level.color2;
+      ctx.shadowBlur = 10;
+      ctx.fillRect(sx, o.y, o.w, o.h);
+      ctx.strokeStyle = level.color1;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(sx, o.y, o.w, o.h);
+      // inner highlight
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(sx+3, o.y+3, o.w-6, o.h-6);
+      ctx.restore();
+    }
+  }
+
+  // Player
+  if (p.alive) {
+    ctx.save();
+    ctx.translate(p.x + PLAYER_SIZE/2, p.y + PLAYER_SIZE/2);
+    ctx.rotate(p.angle);
+    const half = PLAYER_SIZE/2;
+
+    // glow
+    ctx.shadowColor = level.playerColor;
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = level.playerColor;
+    ctx.fillRect(-half, -half, PLAYER_SIZE, PLAYER_SIZE);
+
+    // inner square
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillRect(-half+5, -half+5, PLAYER_SIZE-10, PLAYER_SIZE-10);
+
+    // outline
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-half, -half, PLAYER_SIZE, PLAYER_SIZE);
+
+    ctx.restore();
+  }
+
+  // Particles
+  for (let i = particles.length-1; i >= 0; i--) {
+    const pt = particles[i];
+    pt.x += pt.vx;
+    pt.y += pt.vy;
+    pt.vy += 0.3;
+    pt.life -= pt.decay;
+    if (pt.life <= 0) { particles.splice(i,1); continue; }
+    ctx.save();
+    ctx.globalAlpha = pt.life;
+    ctx.fillStyle = pt.color;
+    ctx.shadowColor = pt.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ─── GAME LOOP ───────────────────────────────────────────────────────────────
+function gameLoop() {
+  update();
+  render();
+  animId = requestAnimationFrame(gameLoop);
+}
+
+// ─── UI HELPERS ──────────────────────────────────────────────────────────────
+function showOverlay(win) {
+  const el = document.getElementById('overlay');
+  document.getElementById('overlay-icon').textContent = win ? '🏆' : '💥';
+  document.getElementById('overlay-title').textContent = win ? 'LEVEL COMPLETE!' : 'LEVEL FAILED';
+  document.getElementById('overlay-title').style.color = win ? '#06d6a0' : '#ff006e';
+  document.getElementById('overlay-sub').textContent = win ? `${LEVELS[currentLevel].name} CONQUERED!` : 'Keep trying!';
+  el.classList.add('visible');
+}
+
+function hideOverlay() {
+  document.getElementById('overlay').classList.remove('visible');
+}
+
+function goMenu() {
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  hideOverlay();
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('menu-screen').classList.add('active');
+}
+
+function startLevel(idx) {
+  currentLevel = idx;
+  const level = LEVELS[idx];
+  document.getElementById('level-title').textContent = level.name;
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('progress-pct').textContent = '0%';
+  document.getElementById('progress-bar').style.background = `linear-gradient(90deg, ${level.color1}, ${level.color2})`;
+  document.getElementById('progress-bar').style.boxShadow = `0 0 8px ${level.color1}`;
+
+  document.getElementById('menu-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+
+  hideOverlay();
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+
+  initLevel(idx);
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function retryLevel() {
+  hideOverlay();
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  initLevel(currentLevel);
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function updateStatusCards() {
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById('status-' + i);
+    if (completedLevels[i]) {
+      el.textContent = '✓ COMPLETED';
+      el.className = 'card-status status-completed';
+    } else {
+      el.textContent = 'NOT COMPLETED';
+      el.className = 'card-status status-incomplete';
+    }
+  }
+}
+
+// Initial resize
+window.addEventListener('resize', () => {
+  if (state && !state.done) {
+    // Reinit to rebuild obstacle screen positions
+    const savedWorldX = state.worldX;
+    initLevel(currentLevel);
+    state.worldX = savedWorldX;
+  }
+});
+</script>
+</body>
+</html>
